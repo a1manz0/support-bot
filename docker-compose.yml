@@ -1,0 +1,18 @@
+version: '3.8'
+
+services:
+  support_bot:
+    container_name: support_bot
+    build: .
+    env_file:
+      - .env
+    volumes:
+      - ./dialogues.json:/app/dialogues.json:ro
+    restart: unless-stopped
+    networks:
+      - bot_network
+
+networks:
+  bot_network:
+    name: support_bot_network
+    driver: bridge 
