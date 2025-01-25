@@ -7,7 +7,10 @@ Telegram бот на базе GPT для автоматизации работы
 
 ## Установка
 
-1. Клонируйте репозиторий
+1. Клонируйте репозиторий:
+```bash
+git clone https://github.com/a1manz0/support-bot.git
+```
 2. Установите зависимости:
 ```bash
 pip install -r requirements.txt
