@@ -14,23 +14,28 @@ from config import (
 
 
 # Настройка логирования
+print("Starting bot initialization...")
 logging.basicConfig(
     level=logging.INFO,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     filename='bot.log'
 )
 logger = logging.getLogger(__name__)
+print("Logging configured")
 
 # Загрузка переменных окружения
+print("Loading environment variables...")
 load_dotenv()
 
 
 # Инициализация клиентов
+print("Initializing Telegram client...")
 client = TelegramClient(
     TELEGRAM_CONFIG.session_name,
     TELEGRAM_CONFIG.api_id,
     TELEGRAM_CONFIG.api_hash
 )
+print("Telegram client initialized")
 
 
 
@@ -38,6 +43,7 @@ openai_client = AsyncOpenAI(
     api_key=OPENAI_CONFIG.api_key,
     base_url=OPENAI_CONFIG.base_url if OPENAI_CONFIG.base_url else None
 )
+print("Initializing OpenAI client...")
 
 # Хранение контекста диалогов
 dialogue_contexts = {}
@@ -87,7 +93,7 @@ async def get_ai_response(message: str, context: list = None) -> dict:
 
         # Получаем результат вызова функции
         function_call = response.choices[0].message.function_call
-        result = json.loads(function_call.arguments)
+        result = json.loads(function_call.arguments.replace('\\/', '/'))
         
         # Логируем уверенность модели
         logger.info(f"Confidence: {result['confidence']}, Question: {message}")
@@ -178,7 +184,12 @@ async def handle_message(event):
                 response_data["reason"]
             )
         else:
-            await event.respond(response_data["response"])
+            # Используем HTML-форматирование для переносов строк
+            formatted_response = response_data["response"].replace('\\n', '<br>')
+            await event.respond(
+                formatted_response,
+                parse_mode='html'
+            )
             
             # Добавляем ответ бота в контекст
             dialogue_contexts[user_id].append({
@@ -193,10 +204,14 @@ async def handle_message(event):
 async def main():
     """Запуск бота"""
     try:
+        print("Starting main execution...")
+        print("Starting Telegram client...")
         await client.start(phone=TELEGRAM_CONFIG.phone_number)
+        print("Telegram client started successfully")
         await client.run_until_disconnected()
     except Exception as e:
-        logger.error(f"Bot crashed: {str(e)}")
+        print(f"Error in main execution: {str(e)}")
+        logger.error(f"Main execution error: {str(e)}")
 
 if __name__ == '__main__':
     import asyncio

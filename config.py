@@ -72,8 +72,8 @@ with open('dialogues.json', 'r', encoding='utf-8') as f:
 
 def clean_text(text: str) -> str:
     """Очистка и форматирование текста"""
-    # Заменяем переносы строк
-    text = text.replace('\n', '\\n')
+    # Убираем экранирование слэша
+    text = text.replace('\\/', '/')
     # Убираем множественные пробелы
     text = ' '.join(text.split())
     # Убираем пробелы перед знаками препинания
@@ -84,8 +84,8 @@ def format_examples():
     formatted = []
     for dialogue in EXAMPLE_DIALOGUES:
         for msg in dialogue['messages']:
-            text = clean_text(msg['text'])
-            # Меняем "Клиент" на "user" и "Менеджер" на "assistant"
+            # Сохраняем переносы строк при форматировании
+            text = msg['text']
             role = "user" if msg['author'] == "Клиент" else "assistant"
             formatted.append(f"{role}: {text}")
         formatted.append("---")
