@@ -36,7 +36,7 @@ client = TelegramClient(
 
 openai_client = AsyncOpenAI(
     api_key=OPENAI_CONFIG.api_key,
-    base_url=OPENAI_CONFIG.base_url
+    base_url=OPENAI_CONFIG.base_url if OPENAI_CONFIG.base_url else None
 )
 
 # Хранение контекста диалогов
@@ -55,6 +55,7 @@ async def get_ai_response(message: str, context: list = None) -> dict:
             - response (str): Текст ответа для пользователя
             - requires_manager (bool): Нужно ли передать диалог менеджеру
             - reason (str): Причина передачи менеджеру
+            - confidence (float): Уверенность в соответствии вопроса примерам
     """
     try:
         print('обработка ai response')
@@ -81,42 +82,32 @@ async def get_ai_response(message: str, context: list = None) -> dict:
             messages=messages,
             functions=FUNCTIONS,
             function_call={"name": "handle_user_request"},  # Принудительно вызываем функцию
-            **OPENAI_CONFIG.model_settings
+            **OPENAI_CONFIG.model_settings  # Используем настройки из конфигурации
         )
 
         # Получаем результат вызова функции
         function_call = response.choices[0].message.function_call
+        result = json.loads(function_call.arguments)
         
-        if function_call and function_call.name == "handle_user_request":
-            # Парсим аргументы функции
-            try:
-                args = json.loads(function_call.arguments)
-                return {
-                    "response": args.get("response", ""),
-                    "requires_manager": args.get("requires_manager", True),
-                    "reason": args.get("reason", "")
-                }
-            except json.JSONDecodeError:
-                logger.error(f"Failed to parse function arguments: {function_call.arguments}")
-                return {
-                    "response": MESSAGES["error_message"],
-                    "requires_manager": True,
-                    "reason": "Ошибка парсинга ответа модели"
-                }
-        else:
-            logger.error("No function call in response")
-            return {
-                "response": MESSAGES["error_message"],
-                "requires_manager": True,
-                "reason": "Неожиданный формат ответа"
-            }
+        # Логируем уверенность модели
+        logger.info(f"Confidence: {result['confidence']}, Question: {message}")
+        print(f"Confidence: {result['confidence']}, Question: {message}")
+        
+        # Если уверенность низкая, передаем менеджеру
+        if result['confidence'] < 0.8 and not result['requires_manager']:
+            result['requires_manager'] = True
+            result['reason'] = f"Низкая уверенность в ответе ({result['confidence']})"
+            result['response'] = ""
+        
+        return result
 
     except Exception as e:
         logger.error(f"Error in get_ai_response: {str(e)}")
         return {
             "response": MESSAGES["error_message"],
             "requires_manager": True,
-            "reason": f"Техническая ошибка: {str(e)}"
+            "reason": f"Ошибка: {str(e)}",
+            "confidence": 0.0
         }
 
 async def notify_manager(user_id: int, message: str, reason: str):
