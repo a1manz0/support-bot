@@ -15,10 +15,19 @@ git clone https://github.com/a1manz0/support-bot.git
 ```bash
 pip install -r requirements.txt
 ```
-3. Создайте файл .env и добавьте переменные окружения:
+3. Перейдите в директорию проекта:
+```bash
+cd support-bot
 ```
-TELEGRAM_TOKEN=your_telegram_token
-OPENAI_API_KEY=your_openai_key
+4. Создать файл .env и заполнить необходимые переменные:
+```
+API_ID=''
+API_HASH=''
+PHONE_NUMBER=''
+OPENAI_API_KEY=''
+MANAGER_CHANNEL_ID=''
+SESSION_NAME='manager_bot'
+MODEL_NAME='gpt-3.5-turbo'
 ```
 
 ## Тестирование
@@ -29,17 +38,6 @@ OPENAI_API_KEY=your_openai_key
 
 ```bash
 pytest tests/ -v -s
-```
-
-3. Создать файл .env и заполнить необходимые переменные:
-```
-API_ID=''
-API_HASH=''
-PHONE_NUMBER=''
-OPENAI_API_KEY=''
-MANAGER_CHANNEL_ID=''
-SESSION_NAME='manager_bot'
-MODEL_NAME='gpt-3.5-turbo'
 ```
 
 ## Запуск через Docker
