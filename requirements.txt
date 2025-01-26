@@ -24,3 +24,4 @@ Telethon==1.38.1
 tqdm==4.67.1
 typing_extensions==4.12.2
 numpy==2.2.2
+tiktoken==0.8.0
