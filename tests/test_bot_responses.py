@@ -2,9 +2,11 @@ import pytest
 import asyncio
 import json
 import numpy as np
-from bot import get_ai_response
+from gpt_client import GPTClient
 from openai import AsyncOpenAI
 from config import OPENAI_CONFIG
+
+gpt_client = GPTClient()
 
 # Загружаем диалоги из JSON
 with open('dialogues.json', 'r', encoding='utf-8') as f:
@@ -109,7 +111,7 @@ class TestBotResponses:
         """Тест стандартных вопросов"""
         for case in TEST_CASES["standard_questions"]:
             print(f"\nТестируем вопрос: {case['question']}")
-            response = await get_ai_response(case["question"])
+            response = await gpt_client.get_response(case["question"])
             print(f"Получен ответ: {response}")
             
             assert response["requires_manager"] is False, \
@@ -125,7 +127,7 @@ class TestBotResponses:
         """Тест вопросов требующих CRM"""
         for question in TEST_CASES["crm_questions"]:
             print(f"\nТестируем вопрос: {question}")
-            response = await get_ai_response(question)
+            response = await gpt_client.get_response(question)
             print(f"Получен ответ: {response}")
             assert response["requires_manager"] is True, f"Бот не передал менеджеру CRM вопрос: {question}"
             # assert response["response"] == "", f"Ответ должен быть пустым для вопроса: {question}"
@@ -134,7 +136,7 @@ class TestBotResponses:
         """Тест персонализированных вопросов"""
         for question in TEST_CASES["personal_questions"]:
             print(f"\nТестируем вопрос: {question}")
-            response = await get_ai_response(question)
+            response = await gpt_client.get_response(question)
             print(f"Получен ответ: {response}")
             assert response["requires_manager"] is True, f"Бот не передал менеджеру персональный вопрос: {question}"
             #assert response["response"] == "", f"Ответ должен быть пустым для вопроса: {question}"
@@ -143,7 +145,7 @@ class TestBotResponses:
         """Тест технических проблем"""
         for question in TEST_CASES["technical_issues"]:
             print(f"\nТестируем вопрос: {question}")
-            response = await get_ai_response(question)
+            response = await gpt_client.get_response(question)
             print(f"Получен ответ: {response}")
             assert response["requires_manager"] is True, f"Бот не передал менеджеру технический вопрос: {question}"
             # assert response["response"] == "", f"Ответ должен быть пустым для вопроса: {question}"
@@ -152,7 +154,7 @@ class TestBotResponses:
         """Тест неполных вопросов"""
         for question in TEST_CASES["incomplete_questions"]:
             print(f"\nТестируем вопрос: {question}")
-            response = await get_ai_response(question)
+            response = await gpt_client.get_response(question)
             print(f"Получен ответ: {response}")
             assert response["requires_manager"] is True, f"Бот не передал менеджеру неполный вопрос: {question}"
             #assert response["response"] == "", f"Ответ должен быть пустым для вопроса: {question}"
@@ -161,7 +163,7 @@ class TestBotResponses:
         """Тест прямых запросов менеджера"""
         for question in TEST_CASES["manager_requests"]:
             print(f"\nТестируем вопрос: {question}")
-            response = await get_ai_response(question)
+            response = await gpt_client.get_response(question)
             print(f"Получен ответ: {response}")
             assert response["requires_manager"] is True, f"Бот не передал менеджеру прямой запрос: {question}"
             #assert response["response"] == "", f"Ответ должен быть пустым для вопроса: {question}"

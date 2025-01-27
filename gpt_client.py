@@ -1,6 +1,7 @@
 import json
 from openai import AsyncOpenAI
 from config import OPENAI_CONFIG, FINAL_SYSTEM_PROMPT, FUNCTIONS
+import tiktoken
 
 class GPTClient:
     def __init__(self):
@@ -58,4 +59,4 @@ class GPTClient:
                 "requires_manager": True,
                 "reason": f"Ошибка: {str(e)}",
                 "confidence": 0.0
-            } 
+            }
