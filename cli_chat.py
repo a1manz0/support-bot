@@ -1,5 +1,4 @@
-from bot import get_ai_response
-from openai import AsyncOpenAI
+from gpt_client import GPTClient
 from config import OPENAI_CONFIG
 import json
 import asyncio
@@ -8,10 +7,7 @@ import tiktoken
 
 tracemalloc.start()
 
-openai_client = AsyncOpenAI(
-    api_key=OPENAI_CONFIG.api_key,
-    base_url=OPENAI_CONFIG.base_url if OPENAI_CONFIG.base_url else None
-)
+gpt_client = GPTClient()
 
 # Хранилище контекста диалога
 
@@ -31,7 +27,7 @@ async def test_chat():
         })
         
         # Получаем ответ от бота с учетом контекста
-        response = await get_ai_response(question, dialogue_context)
+        response = await gpt_client.get_response(question, dialogue_context)
         
         print(f"\nВопрос: {question}")
         print(f"Ответ: {response}")

@@ -2,8 +2,8 @@ import os
 import json
 import logging
 from telethon import TelegramClient, events
-from openai import AsyncOpenAI
 from dotenv import load_dotenv
+from gpt_client import GPTClient
 from config import (
     FINAL_SYSTEM_PROMPT, 
     MESSAGES,
@@ -38,83 +38,11 @@ client = TelegramClient(
 print("Telegram client initialized")
 
 
-
-openai_client = AsyncOpenAI(
-    api_key=OPENAI_CONFIG.api_key,
-    base_url=OPENAI_CONFIG.base_url if OPENAI_CONFIG.base_url else None
-)
-print("Initializing OpenAI client...")
+gpt_client = GPTClient()
+print("Initializing GPT client...")
 
 # Хранение контекста диалогов
 dialogue_contexts = {}
-
-async def get_ai_response(message: str, context: list = None) -> dict:
-    """
-    Получает ответ от GPT на сообщение пользователя используя Function Calling.
-
-    Args:
-        message (str): Текст сообщения от пользователя
-        context (list, optional): Список предыдущих сообщений для контекста
-
-    Returns:
-        dict: Структурированный ответ с полями:
-            - response (str): Текст ответа для пользователя
-            - requires_manager (bool): Нужно ли передать диалог менеджеру
-            - reason (str): Причина передачи менеджеру
-            - confidence (float): Уверенность в соответствии вопроса примерам
-    """
-    try:
-        print('обработка ai response')
-        
-        # Формируем список сообщений для отправки в API
-        messages = [
-            {"role": "system", "content": FINAL_SYSTEM_PROMPT}
-        ]
-        
-        # Добавляем контекст предыдущих сообщений
-        if context:
-            for msg in context[-5:]:
-                messages.append({
-                    "role": "user" if msg["is_user"] else "assistant",
-                    "content": msg["text"]
-                })
-        
-        # Добавляем текущее сообщение пользователя
-        messages.append({"role": "user", "content": message})
-
-        # Отправляем запрос к API с указанием функции
-        response = await openai_client.chat.completions.create(
-            model=OPENAI_CONFIG.model_name,
-            messages=messages,
-            functions=FUNCTIONS,
-            function_call={"name": "handle_user_request"},  # Принудительно вызываем функцию
-            **OPENAI_CONFIG.model_settings  # Используем настройки из конфигурации
-        )
-
-        # Получаем результат вызова функции
-        function_call = response.choices[0].message.function_call
-        result = json.loads(function_call.arguments.replace('\\/', '/'))
-        
-        # Логируем уверенность модели
-        logger.info(f"Confidence: {result['confidence']}, Question: {message}")
-        print(f"Confidence: {result['confidence']}, Question: {message}")
-        
-        # Если уверенность низкая, передаем менеджеру
-        if result['confidence'] < 0.8 and not result['requires_manager']:
-            result['requires_manager'] = True
-            result['reason'] = f"Низкая уверенность в ответе ({result['confidence']})"
-            result['response'] = ""
-        
-        return result
-
-    except Exception as e:
-        logger.error(f"Error in get_ai_response: {str(e)}")
-        return {
-            "response": MESSAGES["error_message"],
-            "requires_manager": True,
-            "reason": f"Ошибка: {str(e)}",
-            "confidence": 0.0
-        }
 
 async def notify_manager(user_id: int, message: str, reason: str):
     """Уведомление менеджера о необходимости вмешательства"""
@@ -168,7 +96,7 @@ async def handle_message(event):
         })
 
         # Получаем ответ от AI
-        response_data = await get_ai_response(
+        response_data = await gpt_client.get_response(
             message, 
             dialogue_contexts[user_id]
         )
